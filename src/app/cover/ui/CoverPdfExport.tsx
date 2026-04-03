@@ -145,9 +145,9 @@ function CoverPdfDocument({
 
         {/* Image overlay (optional) */}
         {imageDataUrl ? (
+          // eslint-disable-next-line jsx-a11y/alt-text
           <Image
             src={imageDataUrl}
-            alt=""
             style={{
               position: "absolute",
               left: 0,

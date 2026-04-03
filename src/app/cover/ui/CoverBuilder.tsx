@@ -11,8 +11,6 @@ import CoverPdfExportButton from "./CoverPdfExport";
 
 type Fabric = typeof import("fabric");
 
-type GuideData = { isGuide?: boolean };
-
 const BLEED_IN = 0.125;
 const SAFE_INSET_FROM_BLEED_IN = 0.25; // safe zone is 0.25" inside the bleed line
 
@@ -128,10 +126,9 @@ export default function CoverBuilder() {
       const scale = img.height ? Math.min(1, targetH / img.height) : 1;
       img.scale(scale);
 
-      // Ensure image sits above guides.
-      img.moveTo(50);
-
       c.add(img);
+      // Keep uploaded art above guide overlays.
+      c.bringObjectToFront(img);
       c.setActiveObject(img);
       c.requestRenderAll();
     } finally {
@@ -297,16 +294,14 @@ function redraw(
 ) {
   const { Rect, Line, Textbox } = fabric;
 
-  // Preserve user-added objects (images); remove only non-image guide objects.
+  // Preserve user-added objects (images); remove everything else (guides/labels).
   const objects = c.getObjects();
   for (const obj of objects) {
-    // FabricImage class name varies; safest is: remove anything we locked as a guide.
-    if ((obj.data as GuideData | undefined)?.isGuide === true) c.remove(obj);
+    if (obj.type !== "image") c.remove(obj);
   }
 
   // Resize + fit.
-  c.setWidth(layout.fullWidthPx);
-  c.setHeight(layout.fullHeightPx);
+  c.setDimensions({ width: layout.fullWidthPx, height: layout.fullHeightPx });
 
   const fitScale = Math.min(
     1,
@@ -458,9 +453,9 @@ function redraw(
 
   c.add(back, spine, front, divider1, divider2, trimRect, safeRect, backLabel, spineLabel, frontLabel, bleedLabel, safeLabel);
 
-  // Keep guides behind images.
+  // Keep uploaded art above guides.
   for (const obj of c.getObjects()) {
-    if ((obj.data as GuideData | undefined)?.isGuide === true) obj.moveTo(0);
+    if (obj.type === "image") c.bringObjectToFront(obj);
   }
 
   c.requestRenderAll();
